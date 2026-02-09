@@ -40,3 +40,182 @@
 .read-the-docs {
   color: #888;
 }
+/* App shell */
+.appShell {
+  /* min-height: 100vh; */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.appFrame {
+  height: calc(100vh - 66px);
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+}
+
+/* Panels */
+.panel {
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panelHeader {
+  padding: 10px 12px;
+  border-bottom: 1px solid #333;
+  font-weight: 600;
+}
+
+.panelBody {
+  padding: 12px;
+  min-height: 0;
+}
+
+.panelBody.scroll {
+  overflow-y: auto;
+}
+
+/* Top bar */
+.topBar {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: left;
+  padding-left: 1rem;
+}
+
+/* Main content area */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  min-height: 0;
+  /* critical for nested scrolling */
+}
+
+.leftCol {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* Scrolling regions */
+.scroll {
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Rules list */
+.ruleRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #2c2c2c;
+}
+
+.ruleActions {
+  display: flex;
+  gap: 8px;
+}
+
+.muted {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.listLine {
+  text-align: left;
+  padding-left: .5rem;
+}
+
+/* Bottom bar */
+.bottomBar {
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.onlineList {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #333;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.roomFade {
+  transition: opacity 160ms ease, transform 160ms ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.roomFade--switching {
+  opacity: 0.35;
+  transform: translateY(2px);
+}
+
+/* Firefox */
+.panelBody.scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Chromium / WebKit */
+.panelBody.scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panelBody.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panelBody.scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+}
+
+.panelBody.scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.rightCol .panel {
+  max-height: 100%;
+}
+
+.rightCol .panel:nth-of-type(2) {
+  flex: 1.2;
+  /* Activity Feed */
+}
+
+.rightCol .panel:nth-of-type(3) {
+  flex: 1;
+  /* Notifications */
+}

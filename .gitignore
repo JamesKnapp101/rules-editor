@@ -1,0 +1,59 @@
+# -------------------------
+# Node / package managers
+# -------------------------
+node_modules/
+**/node_modules/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -------------------------
+# Build output
+# -------------------------
+dist/
+build/
+**/dist/
+**/build/
+
+# Vite
+client/dist/
+client/.vite/
+
+# -------------------------
+# TypeScript
+# -------------------------
+*.tsbuildinfo
+
+# -------------------------
+# Environment files
+# -------------------------
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# Certificates / secrets
+# -------------------------
+*.pem
+*.key
+*.crt
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+*.log
+
+# -------------------------
+# OS / editor junk
+# -------------------------
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
