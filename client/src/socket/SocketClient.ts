@@ -119,7 +119,6 @@ export class SocketClient {
 
   onStatus(handler: StatusHandler): Unsubscribe {
     this.statusHandlers.add(handler);
-    // push current value immediately so subscribers sync
     handler(this.status);
     return () => this.statusHandlers.delete(handler);
   }

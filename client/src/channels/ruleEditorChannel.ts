@@ -108,7 +108,6 @@ export function createRuleEditorChannel(client: SocketClient) {
           return;
 
         default:
-          // ignore unknown messages: other channels may be using the same socket
           return;
       }
     });

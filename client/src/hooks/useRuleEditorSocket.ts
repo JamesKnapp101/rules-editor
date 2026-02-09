@@ -65,7 +65,6 @@ export function useRuleEditorSocket(params: {
     return () => unsubMessages();
   }, [url, room, log]);
 
-  // Expose channel commands (transport is shared)
   const client = useMemo(() => getSocketClient(url), [url]);
   const channel = useMemo(() => createRuleEditorChannel(client), [client]);
 

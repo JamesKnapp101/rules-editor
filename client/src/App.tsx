@@ -60,8 +60,6 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
   useEffect(() => {
     const prev = prevRoomRef.current;
     if (prev !== room) {
-      // Optional: local-only UX log could go here if you expose a log method
-      // socket.log?.(`Switched rooms: ${prev} → ${room}`);
       prevRoomRef.current = room;
     }
   }, [room]);
@@ -133,13 +131,12 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
 
           {/* Right: sidebar stack */}
           <div className="rightCol">
-            {/* Rooms (no fade needed, but fine either way) */}
             <div className="panel">
               <div className="panelHeader">Rooms</div>
               <div className="panelBody">
                 <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {["general", "team-1", "team-2"].map((r) => {
-                    const count = socket.roomCounts?.[r] ?? null; // harmless now, useful later
+                    const count = socket.roomCounts?.[r] ?? null;
 
                     return (
                       <li key={r} style={{ marginBottom: 8 }}>

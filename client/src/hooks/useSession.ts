@@ -10,21 +10,15 @@ export function useSession(params: {
   room: string;
 }) {
   const { url, userId, displayName, room } = params;
-
   const [status, setStatus] = useState<SocketStatus>("disconnected");
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const [helloSentKey, setHelloSentKey] = useState<string | null>(null);
-
-  // Prevent duplicate HELLO/logging across StrictMode/effect reruns
   const helloKeyRef = useRef<string | null>(null);
-
   const desiredHelloKey = `${userId}|${displayName}|${room}`;
 
   useEffect(() => {
     const client = getSocketClient(url);
     const session = createSessionChannel(client);
-
-    // important: reset per mount / identity change
     helloKeyRef.current = null;
 
     const unsubStatus = client.onStatus((s) => {

@@ -8,7 +8,7 @@ export type Unsubscribe = () => void;
 
 export type SocketClientOptions = {
   url: string;
-  reconnectDelayMs?: number; // base delay
+  reconnectDelayMs?: number;
   maxReconnectDelayMs?: number;
 };
 

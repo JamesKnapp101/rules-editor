@@ -25,7 +25,10 @@ export type NotificationsServerToClient =
 
 type Handlers = Partial<{
   pushed: (
-    notif: Extract<NotificationsServerToClient, { type: "NOTIF_PUSHED" }>["notif"],
+    notif: Extract<
+      NotificationsServerToClient,
+      { type: "NOTIF_PUSHED" }
+    >["notif"],
   ) => void;
   read: (p: {
     notifId: string;
@@ -55,7 +58,7 @@ export function createNotificationsChannel(client: SocketClient) {
           });
           return;
         default:
-          return; // ignore other channels' messages
+          return;
       }
     });
   }

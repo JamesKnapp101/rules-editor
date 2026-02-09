@@ -8,7 +8,7 @@ type Notif = {
   text: string;
   fromDisplayName: string;
   ts: number;
-  readBy: string[]; // displayNames
+  readBy: string[];
 };
 
 export function NotificationsPanel(props: {
@@ -63,11 +63,8 @@ export function NotificationsPanel(props: {
   React.useEffect(() => {
     const el = notifScrollRef.current;
     if (!el) return;
-
-    // find nearest scroll container (panelBody.scroll)
     const scroller = el.closest(".panelBody.scroll") as HTMLDivElement | null;
     if (!scroller) return;
-
     scroller.scrollTo({ top: 0, behavior: "smooth" });
   }, [notifs.length]);
 

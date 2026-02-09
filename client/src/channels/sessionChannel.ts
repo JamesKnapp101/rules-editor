@@ -34,7 +34,7 @@ export function createSessionChannel(client: SocketClient) {
           handlers.error?.(msg.message);
           return;
         default:
-          return; // ignore other channel messages
+          return;
       }
     });
   }
