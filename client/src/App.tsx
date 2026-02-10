@@ -2,11 +2,35 @@ import { useRuleEditorSocket } from "./hooks/useRuleEditorSocket";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
+import { MOCK_RULES, type Rule } from "./mocks/mockRules";
 
-const RULES = Array.from({ length: 10 }).map((_, i) => ({
-  id: `RULE-${100 + i}`,
-  name: `Rule ${100 + i}`,
-}));
+function formatWhen(predicates: Array<any>): string {
+  if (!predicates || predicates.length === 0) return "Always";
+
+  return predicates
+    .map((p) => {
+      switch (p.op) {
+        case "=":
+        case "!=":
+        case "<":
+        case "<=":
+        case ">":
+        case ">=":
+          return `${p.field} ${p.op} ${p.value}`;
+        case "in":
+          return `${p.field} in (${p.value.join(", ")})`;
+        case "notIn":
+          return `${p.field} not in (${p.value.join(", ")})`;
+        case "exists":
+          return p.value ? `${p.field} exists` : `${p.field} is empty`;
+        case "between":
+          return `${p.field} between ${p.value[0]} and ${p.value[1]}`;
+        default:
+          return "—";
+      }
+    })
+    .join(" AND ");
+}
 
 function makeId() {
   return Math.random().toString(16).slice(2);
@@ -24,6 +48,7 @@ function ConnectScreen(props: { onConnect: (name: string) => void }) {
         Display name{" "}
         <input
           autoFocus
+          style={{ color: "black", backgroundColor: "white" }}
           placeholder="James, Alice, Bob…"
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
@@ -92,7 +117,16 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
               Signed in as <b>{displayName}</b>
             </div>
 
-            <div>
+            <div className="statusBadge">
+              <span
+                className={`statusDot ${
+                  socket.status === "connected"
+                    ? "statusDot--connected"
+                    : socket.status === "connecting"
+                      ? "statusDot--connecting"
+                      : ""
+                }`}
+              />
               Status: <b>{socket.status}</b>
             </div>
 
@@ -107,19 +141,35 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
             <div className="panelHeader">Rules</div>
             <div className="panelBody scroll">
               <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
-                {RULES.map((r) => (
+                {(MOCK_RULES as Rule[]).map((r) => (
                   <li key={r.id} className="ruleRow">
-                    <div className="listLine">
-                      <b>{r.id}</b> — {r.name}
-                    </div>
+                    {/* Column: Type */}
+                    <div className="ruleType">{r.event}</div>
+
+                    {/* Column: Field */}
+                    <div className="ruleField">{r.target.field}</div>
+
+                    {/* Column: Condition */}
+                    <div className="ruleCondition">{formatWhen(r.when)}</div>
+
+                    {/* Column: Actions */}
                     <div className="ruleActions">
-                      <button onClick={() => socket.startEdit(r.id)}>
+                      <button
+                        className="button buttonPrimary"
+                        onClick={() => socket.startEdit(r.id)}
+                      >
                         Start edit
                       </button>
-                      <button onClick={() => socket.cancelEdit(r.id)}>
+                      <button
+                        className="button buttonDanger"
+                        onClick={() => socket.cancelEdit(r.id)}
+                      >
                         Cancel
                       </button>
-                      <button onClick={() => socket.saveRule(r.id)}>
+                      <button
+                        className="button"
+                        onClick={() => socket.saveRule(r.id)}
+                      >
                         Save
                       </button>
                     </div>
@@ -134,49 +184,26 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
             <div className="panel">
               <div className="panelHeader">Rooms</div>
               <div className="panelBody">
-                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <ul className="roomList">
                   {["general", "team-1", "team-2"].map((r) => {
                     const count = socket.roomCounts?.[r] ?? null;
+                    const active = room === r;
 
                     return (
-                      <li key={r} style={{ marginBottom: 8 }}>
+                      <li key={r}>
                         <button
                           onClick={() => setRoom(r)}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: "8px 10px",
-                            borderRadius: 8,
-                            border: "1px solid #333",
-                            background:
-                              room === r
-                                ? "rgba(100,108,255,0.15)"
-                                : "transparent",
-                            cursor: "pointer",
-                          }}
+                          className={`roomButton ${active ? "roomButtonActive" : ""}`}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "baseline",
-                              gap: 8,
-                            }}
-                          >
-                            <div style={{ fontWeight: 500 }}>{r}</div>
-
-                            {/* Optional count display; shows only when available */}
+                          <div className="roomButtonRow">
+                            <div className="roomName">{r}</div>
                             {count !== null && (
-                              <div className="muted" style={{ fontSize: 12 }}>
-                                {count}
-                              </div>
+                              <div className="roomCountPill">{count}</div>
                             )}
                           </div>
 
-                          {room === r && (
-                            <div className="muted" style={{ fontSize: 11 }}>
-                              current room
-                            </div>
+                          {active && (
+                            <div className="roomMeta">current room</div>
                           )}
                         </button>
                       </li>
@@ -224,7 +251,7 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
                 )}
               </div>
 
-              <div className="panelBody scroll" ref={feedScrollRef}>
+              <div className="panelBody scroll">
                 <NotificationsPanel
                   url="wss://localhost:5176"
                   currentDisplayName={displayName}

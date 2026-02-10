@@ -11,6 +11,28 @@ type Notif = {
   readBy: string[];
 };
 
+const USER_COLORS = [
+  "#2563eb", // blue
+  "#16a34a", // green
+  "#9333ea", // purple
+  "#db2777", // pink
+  "#ea580c", // orange
+  "#0d9488", // teal
+  "#4f46e5", // indigo
+  "#65a30d", // lime
+];
+
+export function getUserColor(name: string): string {
+  let hash = 0;
+
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  }
+
+  const idx = Math.abs(hash) % USER_COLORS.length;
+  return USER_COLORS[idx];
+}
+
 export function NotificationsPanel(props: {
   url: string;
   currentDisplayName: string;
@@ -72,6 +94,7 @@ export function NotificationsPanel(props: {
     <div ref={notifScrollRef}>
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <input
+          className="input"
           value={draft}
           placeholder="Type a notification..."
           onChange={(e) => setDraft(e.target.value)}
@@ -84,6 +107,7 @@ export function NotificationsPanel(props: {
           style={{ flex: 1 }}
         />
         <button
+          className="button buttonPrimary"
           onClick={() => {
             if (!draft.trim()) return;
             channel.push(draft.trim());
@@ -101,7 +125,16 @@ export function NotificationsPanel(props: {
           {notifs.map((n) => (
             <li key={n.id} className="listLine" style={{ marginBottom: 8 }}>
               <div>
-                <b>{n.fromDisplayName}:</b> {n.text}
+                <span
+                  className="userTag"
+                  style={{
+                    ["--userColor" as any]: getUserColor(n.fromDisplayName),
+                  }}
+                >
+                  <span className="userDot" />
+                  <span className="userName">{n.fromDisplayName}:</span>
+                </span>
+                <span className="notifText">{n.text}</span>
               </div>
               <div style={{ opacity: 0.7, fontSize: 12 }}>
                 {new Date(n.ts).toLocaleTimeString()}{" "}
@@ -110,7 +143,10 @@ export function NotificationsPanel(props: {
               <div style={{ marginTop: 4 }}>
                 {n.fromDisplayName !== currentDisplayName &&
                   !n.readBy.includes(currentDisplayName) && (
-                    <button onClick={() => channel.markRead(n.id)}>
+                    <button
+                      className="button"
+                      onClick={() => channel.markRead(n.id)}
+                    >
                       Mark read
                     </button>
                   )}
