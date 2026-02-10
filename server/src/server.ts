@@ -1,68 +1,46 @@
-import https from "node:https";
-import fs from "node:fs";
-import { WebSocketServer, WebSocket } from "ws";
+import http from "node:http";
 import crypto from "node:crypto";
+import { WebSocketServer, WebSocket } from "ws";
+import type { ClientToServer, Conn, Rule, ServerToClient } from "./types.js";
+import { MOCK_ADMIN_RULES } from "./mocks/mockAdminRules.js";
+import { MOCK_BILLING_RULES } from "./mocks/mockBillingRules.js";
+import { MOCK_CLINICAL_RULES } from "./mocks/mockClinicalRules.js";
 
-type ClientToServer =
-  | { type: "HELLO"; userId: string; displayName: string; room: string }
-  | { type: "START_EDIT"; ruleId: string }
-  | { type: "CANCEL_EDIT"; ruleId: string }
-  | { type: "SAVE_RULE"; ruleId: string }
-  | { type: "NOTIF_PUSH"; text: string }
-  | { type: "NOTIF_READ"; notifId: string };
-
-type ServerToClient =
-  | { type: "WELCOME"; connectionId: string }
-  | {
-      type: "PRESENCE_SNAPSHOT";
-      users: Array<{ userId: string; displayName: string }>;
-    }
-  | { type: "USER_JOINED"; user: { userId: string; displayName: string } }
-  | { type: "USER_LEFT"; userId: string }
-  | {
-      type: "EDIT_STARTED";
-      ruleId: string;
-      userId: string;
-      displayName: string;
-    }
-  | {
-      type: "EDIT_CANCELLED";
-      ruleId: string;
-      userId: string;
-      displayName: string;
-    }
-  | { type: "RULE_SAVED"; ruleId: string; userId: string; displayName: string }
-  | { type: "ERROR"; message: string }
-  | {
-      type: "NOTIF_PUSHED";
-      notif: {
-        id: string;
-        text: string;
-        fromUserId: string;
-        fromDisplayName: string;
-        ts: number;
-      };
-    }
-  | {
-      type: "NOTIF_READ";
-      notifId: string;
-      byUserId: string;
-      byDisplayName: string;
-    }
-  | { type: "ROOM_COUNTS"; counts: Record<string, number> };
-type Conn = {
-  ws: WebSocket;
-  connectionId: string;
-  room?: string;
-  userId?: string;
-  displayName?: string;
+const rulesByRoom: Record<string, Rule[]> = {
+  general: MOCK_ADMIN_RULES,
+  billing: MOCK_BILLING_RULES,
+  clinical: MOCK_CLINICAL_RULES,
 };
 
-const server = https.createServer({
-  cert: fs.readFileSync("./localhost+2.pem"),
-  key: fs.readFileSync("./localhost+2-key.pem"),
-});
+function requireIdentity(
+  conn: Conn,
+  ws: WebSocket,
+): conn is Conn & { userId: string; displayName: string } {
+  if (!conn.userId || !conn.displayName) {
+    send(ws, { type: "ERROR", message: "Send HELLO first" });
+    return false;
+  }
+  return true;
+}
 
+function requireRoom(
+  conn: Conn,
+  ws: WebSocket,
+): conn is Conn & { room: string; userId: string; displayName: string } {
+  if (!requireIdentity(conn, ws)) return false;
+  if (!conn.room) {
+    send(ws, { type: "ERROR", message: "Subscribe to a room first" });
+    return false;
+  }
+  return true;
+}
+
+const PORT = 5176;
+
+// Plain HTTP server; TLS termination is assumed to be handled by a proxy in production.
+const server = http.createServer();
+
+// Attach WebSocketServer to the HTTP server (single listening socket, no confusion)
 const wss = new WebSocketServer({ server });
 
 const conns = new Map<WebSocket, Conn>();
@@ -123,8 +101,6 @@ function broadcastAll(msg: ServerToClient) {
 
 function roomCounts() {
   const counts: Record<string, number> = {};
-
-  // count unique users per room (matches your presence semantics)
   const seenByRoom = new Map<string, Set<string>>();
 
   for (const c of conns.values()) {
@@ -165,42 +141,75 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.type === "HELLO") {
+      conn.userId = msg.userId;
+      conn.displayName = msg.displayName;
+
+      emitRoomCounts();
+      return;
+    }
+
+    if (msg.type === "SUBSCRIBE") {
+      if (!requireIdentity(conn, ws)) return;
+
+      const nextRoom = msg.room;
       const prevRoom = conn.room;
-      const prevUserId = conn.userId;
 
-      const roomChanged = !!prevRoom && prevRoom !== msg.room;
-      const userChanged = !!prevUserId && prevUserId !== msg.userId;
+      if (prevRoom === nextRoom) {
+        send(ws, { type: "SUBSCRIBED", room: nextRoom });
+        send(ws, { type: "PRESENCE_SNAPSHOT", users: roomUsers(nextRoom) });
+        send(ws, {
+          type: "RULES_SNAPSHOT",
+          room: nextRoom,
+          rules: rulesByRoom[nextRoom] ?? [],
+        });
+        return;
+      }
 
-      // If they were previously in a room (or identity), notify old room they left
-      if (prevRoom && prevUserId && (roomChanged || userChanged)) {
+      if (prevRoom && conn.userId) {
         broadcastExcept(prevRoom, ws, {
           type: "USER_LEFT",
-          userId: prevUserId,
+          userId: conn.userId,
         });
       }
 
-      conn.userId = msg.userId;
-      conn.displayName = msg.displayName;
-      conn.room = msg.room;
+      conn.room = nextRoom;
 
-      // snapshot to the (re)joining user
-      send(ws, { type: "PRESENCE_SNAPSHOT", users: roomUsers(msg.room) });
-
-      // announce join to others (including self is fine)
-      broadcastExcept(msg.room, ws, {
-        type: "USER_JOINED",
-        user: { userId: msg.userId, displayName: msg.displayName },
+      send(ws, { type: "SUBSCRIBED", room: nextRoom });
+      send(ws, { type: "PRESENCE_SNAPSHOT", users: roomUsers(nextRoom) });
+      send(ws, {
+        type: "RULES_SNAPSHOT",
+        room: nextRoom,
+        rules: rulesByRoom[nextRoom] ?? [],
       });
+
+      broadcastExcept(nextRoom, ws, {
+        type: "USER_JOINED",
+        user: { userId: conn.userId, displayName: conn.displayName },
+      });
+
       emitRoomCounts();
-
       return;
     }
 
-    // require HELLO before other actions
-    if (!conn.room || !conn.userId || !conn.displayName) {
-      send(ws, { type: "ERROR", message: "Send HELLO first" });
+    if (msg.type === "UNSUBSCRIBE") {
+      if (!requireIdentity(conn, ws)) return;
+
+      if (conn.room !== msg.room) {
+        send(ws, { type: "ERROR", message: "Not subscribed to that room" });
+        return;
+      }
+
+      const prevRoom = conn.room;
+      conn.room = undefined;
+
+      broadcastExcept(prevRoom, ws, { type: "USER_LEFT", userId: conn.userId });
+      send(ws, { type: "UNSUBSCRIBED", room: prevRoom });
+
+      emitRoomCounts();
       return;
     }
+
+    if (!requireRoom(conn, ws)) return;
 
     switch (msg.type) {
       case "START_EDIT":
@@ -221,7 +230,12 @@ wss.on("connection", (ws) => {
         });
         return;
 
-      case "SAVE_RULE":
+      case "SAVE_RULE": {
+        const list = rulesByRoom[conn.room] ?? [];
+        const idx = list.findIndex((r) => r.id === msg.ruleId);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], summary: `${list[idx].summary} (saved)` };
+        }
         broadcast(conn.room, {
           type: "RULE_SAVED",
           ruleId: msg.ruleId,
@@ -229,6 +243,7 @@ wss.on("connection", (ws) => {
           displayName: conn.displayName,
         });
         return;
+      }
 
       case "NOTIF_PUSH": {
         const notif = {
@@ -261,14 +276,15 @@ wss.on("connection", (ws) => {
   ws.on("close", () => {
     const c = conns.get(ws);
     conns.delete(ws);
+
     if (c?.room && c.userId) {
       broadcast(c.room, { type: "USER_LEFT", userId: c.userId });
     }
+
     emitRoomCounts();
   });
 });
 
-const PORT = 5176;
 server.listen(PORT, () => {
-  console.log(`WSS server listening on https://localhost:${PORT}`);
+  console.log(`WebSocket server listening on ws://localhost:${PORT}`);
 });

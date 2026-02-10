@@ -40,13 +40,13 @@ export type Rule = {
     | {
         kind: "validate";
         validator: "dateOrder" | "range" | "requiredIf";
-        params: Record<string, any>;
+        params: Record<string, unknown>;
       }
     | { kind: "updateOptions"; mode: "add" | "remove"; options: string[] };
-  summary?: string; // optional UI helper
+  summary?: string;
 };
 
-export const MOCK_RULES: Rule[] = [
+export const MOCK_ADMIN_RULES: Rule[] = [
   {
     id: "RULE-101",
     event: "Hide Field",

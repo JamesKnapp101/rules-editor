@@ -2,9 +2,17 @@ import { useRuleEditorSocket } from "./hooks/useRuleEditorSocket";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
-import { MOCK_RULES, type Rule } from "./mocks/mockRules";
 
-function formatWhen(predicates: Array<any>): string {
+type RoomId = "general" | "billing" | "clinical";
+const ROOMS: Array<{ id: RoomId; label: string }> = [
+  { id: "general", label: "General (Admin)" },
+  { id: "billing", label: "Billing" },
+  { id: "clinical", label: "Clinical" },
+];
+
+function formatWhen(
+  predicates: Array<{ op: string; field: string; value: any }>,
+): string {
   if (!predicates || predicates.length === 0) return "Always";
 
   return predicates
@@ -70,12 +78,13 @@ function ConnectScreen(props: { onConnect: (name: string) => void }) {
 
 function RuleEditorScreen(props: { userId: string; displayName: string }) {
   const { userId, displayName } = props;
-  const [room, setRoom] = useState("general");
+  const [room, setRoom] = useState<RoomId>("general");
+
   const [notifUnread, setNotifUnread] = useState(0);
   const feedScrollRef = useRef<HTMLDivElement | null>(null);
 
   const socket = useRuleEditorSocket({
-    url: "wss://localhost:5176",
+    url: "ws://localhost:5176",
     userId,
     displayName,
     room,
@@ -91,7 +100,6 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
 
   const [switching, setSwitching] = useState(false);
   useEffect(() => {
-    setSwitching(true);
     const t = window.setTimeout(() => setSwitching(false), 160);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,7 +149,7 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
             <div className="panelHeader">Rules</div>
             <div className="panelBody scroll">
               <ul style={{ padding: 0, margin: 0, listStyle: "none" }}>
-                {(MOCK_RULES as Rule[]).map((r) => (
+                {socket.rules.map((r) => (
                   <li key={r.id} className="ruleRow">
                     {/* Column: Type */}
                     <div className="ruleType">{r.event}</div>
@@ -185,23 +193,25 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
               <div className="panelHeader">Rooms</div>
               <div className="panelBody">
                 <ul className="roomList">
-                  {["general", "team-1", "team-2"].map((r) => {
-                    const count = socket.roomCounts?.[r] ?? null;
-                    const active = room === r;
+                  {ROOMS.map(({ id, label }) => {
+                    const count = socket.roomCounts?.[id] ?? null;
+                    const active = room === id;
 
                     return (
-                      <li key={r}>
+                      <li key={id}>
                         <button
-                          onClick={() => setRoom(r)}
+                          onClick={() => {
+                            setRoom(id);
+                            setSwitching(true);
+                          }}
                           className={`roomButton ${active ? "roomButtonActive" : ""}`}
                         >
                           <div className="roomButtonRow">
-                            <div className="roomName">{r}</div>
+                            <div className="roomName">{label}</div>
                             {count !== null && (
                               <div className="roomCountPill">{count}</div>
                             )}
                           </div>
-
                           {active && (
                             <div className="roomMeta">current room</div>
                           )}
@@ -253,7 +263,7 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
 
               <div className="panelBody scroll">
                 <NotificationsPanel
-                  url="wss://localhost:5176"
+                  url="ws://localhost:5176"
                   currentDisplayName={displayName}
                   onUnreadCountChange={setNotifUnread}
                 />

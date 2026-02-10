@@ -159,6 +159,16 @@ If environment variables are introduced later:
 
 ---
 
+## How to Try It
+
+1. Open the app in two browser tabs.
+2. Enter different display names.
+3. Join the same room.
+4. Start editing a rule in one tab and observe activity updates in the other.
+5. Switch rooms to see subscription changes and presence updates.
+
+This is intentionally a minimal interaction surface — the focus is on WebSocket lifecycle, message flow, and state consistency rather than UI.
+
 ## What This Is (and Isn’t)
 
 ### This **is**:
@@ -178,3 +188,12 @@ If environment variables are introduced later:
 ## Why This Exists
 
 This project exists to show what a calm, maintainable baseline looks like once you account for reconnection, state consistency, and long‑term ownership — without dragging in unnecessary abstractions.
+
+## Limitations & Roadmap
+
+- Concurrent editing is currently allowed (no edit locking).
+- A scoped soft-lock per rule is a planned improvement:
+  - Server-granted edit lease with TTL
+  - Heartbeat refresh
+  - Automatic expiration on disconnect
+  - Client UI gating and lock visibility

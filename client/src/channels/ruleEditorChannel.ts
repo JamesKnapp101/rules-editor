@@ -1,8 +1,9 @@
 import { SocketClient } from "../socket/SocketClient";
-import type { SocketEnvelope, Unsubscribe } from "../socket/types";
+import type { Unsubscribe } from "../socket/types";
+import type { Rule } from "../types";
 
 export type RuleEditorClientToServer =
-  | { type: "HELLO"; userId: string; displayName: string; room: string }
+  | { type: "HELLO"; userId: string; displayName: string }
   | { type: "START_EDIT"; ruleId: string }
   | { type: "CANCEL_EDIT"; ruleId: string }
   | { type: "SAVE_RULE"; ruleId: string };
@@ -29,13 +30,15 @@ export type RuleEditorServerToClient =
     }
   | { type: "RULE_SAVED"; ruleId: string; userId: string; displayName: string }
   | { type: "ERROR"; message: string }
-  | { type: "ROOM_COUNTS"; counts: Record<string, number> };
+  | { type: "ROOM_COUNTS"; counts: Record<string, number> }
+  | { type: "RULES_SNAPSHOT"; room: string; rules: Rule[] };
 
 type Handlers = Partial<{
   welcome: (connectionId: string) => void;
   presenceSnapshot: (
     users: Array<{ userId: string; displayName: string }>,
   ) => void;
+  rulesSnapshot: (p: { room: string; rules: Rule[] }) => void;
   roomCounts: (counts: Record<string, number>) => void;
   userJoined: (user: { userId: string; displayName: string }) => void;
   userLeft: (userId: string) => void;
@@ -59,7 +62,7 @@ type Handlers = Partial<{
 
 export function createRuleEditorChannel(client: SocketClient) {
   function send(msg: RuleEditorClientToServer) {
-    client.send(msg as unknown as SocketEnvelope);
+    client.send(msg);
   }
 
   function subscribe(handlers: Handlers): Unsubscribe {
@@ -72,6 +75,9 @@ export function createRuleEditorChannel(client: SocketClient) {
           return;
         case "PRESENCE_SNAPSHOT":
           handlers.presenceSnapshot?.(msg.users);
+          return;
+        case "RULES_SNAPSHOT":
+          handlers.rulesSnapshot?.({ room: msg.room, rules: msg.rules });
           return;
         case "USER_JOINED":
           handlers.userJoined?.(msg.user);

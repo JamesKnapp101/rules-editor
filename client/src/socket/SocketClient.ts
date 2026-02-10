@@ -52,18 +52,22 @@ export class SocketClient {
     this.ws = ws;
 
     ws.onopen = () => {
-      this.currentDelayMs = this.reconnectDelayMs; // reset backoff
+      this.currentDelayMs = this.reconnectDelayMs;
       this.setStatus("connected");
     };
 
     ws.onmessage = (ev) => {
-      let msg: SocketEnvelope;
+      let msg: unknown;
       try {
         msg = JSON.parse(ev.data);
       } catch {
         return;
       }
-      for (const h of this.messageHandlers) h(msg);
+
+      // lightweight shape check
+      if (!msg || typeof msg !== "object" || !("type" in msg)) return;
+
+      for (const h of this.messageHandlers) h(msg as SocketEnvelope);
     };
 
     ws.onclose = () => {
@@ -77,7 +81,6 @@ export class SocketClient {
       if (this.reconnectTimer) window.clearTimeout(this.reconnectTimer);
       const delay = this.currentDelayMs;
 
-      // basic exponential backoff with cap
       this.currentDelayMs = Math.min(
         this.currentDelayMs * 1.6,
         this.maxReconnectDelayMs,
@@ -105,7 +108,7 @@ export class SocketClient {
     this.setStatus("disconnected");
   }
 
-  send(msg: SocketEnvelope) {
+  send<T extends SocketEnvelope>(msg: T) {
     const ws = this.ws;
     if (!ws || ws.readyState !== WebSocket.OPEN) return false;
     ws.send(JSON.stringify(msg));

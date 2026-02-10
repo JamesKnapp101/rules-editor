@@ -2,6 +2,7 @@ import * as React from "react";
 import { getSocketClient } from "../socket/getSocketClient";
 import { createNotificationsChannel } from "../channels/notificationsChannel";
 import { useEffect, useMemo, useState } from "react";
+import { getUserColor } from "../utils/getUserColor";
 
 type Notif = {
   id: string;
@@ -10,28 +11,6 @@ type Notif = {
   ts: number;
   readBy: string[];
 };
-
-const USER_COLORS = [
-  "#2563eb", // blue
-  "#16a34a", // green
-  "#9333ea", // purple
-  "#db2777", // pink
-  "#ea580c", // orange
-  "#0d9488", // teal
-  "#4f46e5", // indigo
-  "#65a30d", // lime
-];
-
-export function getUserColor(name: string): string {
-  let hash = 0;
-
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  }
-
-  const idx = Math.abs(hash) % USER_COLORS.length;
-  return USER_COLORS[idx];
-}
 
 export function NotificationsPanel(props: {
   url: string;
@@ -128,7 +107,7 @@ export function NotificationsPanel(props: {
                 <span
                   className="userTag"
                   style={{
-                    ["--userColor" as any]: getUserColor(n.fromDisplayName),
+                    ["--userColor" as string]: getUserColor(n.fromDisplayName),
                   }}
                 >
                   <span className="userDot" />

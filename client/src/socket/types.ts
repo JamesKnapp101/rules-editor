@@ -13,3 +13,4 @@ export type SocketClientOptions = {
 };
 
 export type SocketEnvelope = { type: string; [key: string]: unknown };
+export type SocketEnvelopeBase = { type: string };
