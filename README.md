@@ -2,7 +2,7 @@
 
 **Client + Server · React · TypeScript · WebSockets**
 
-A small, production‑leaning WebSocket project that demonstrates how to design and structure a real‑world, long‑lived socket feature without turning the codebase into a science experiment.
+A small, production-leaning WebSocket project that demonstrates how to design and structure a real-world, long-lived socket feature for teams that have to maintain it.
 
 This repo intentionally favors **clarity, correctness, and extensibility** over UI polish.
 
@@ -18,9 +18,9 @@ This repo intentionally favors **clarity, correctness, and extensibility** over 
 - Explicit message validation using typed contracts
 - Basic observability: connection state, retries, last‑message timestamps
 
-If you’ve ever inherited a WebSocket feature where _everything_ lives inside a React component… this is the opposite of that.
-
 ---
+
+![Rule Editor activity feed](client/src/assets/screenshot.png)
 
 ## Tech Stack
 
@@ -167,7 +167,7 @@ If environment variables are introduced later:
 4. Start editing a rule in one tab and observe activity updates in the other.
 5. Switch rooms to see subscription changes and presence updates.
 
-This is intentionally a minimal interaction surface — the focus is on WebSocket lifecycle, message flow, and state consistency rather than UI.
+This is intentionally a minimal interaction surface; the focus is on WebSocket lifecycle, message flow, and state consistency rather than UI.
 
 ## What This Is (and Isn’t)
 
@@ -187,7 +187,7 @@ This is intentionally a minimal interaction surface — the focus is on WebSocke
 
 ## Why This Exists
 
-This project exists to show what a calm, maintainable baseline looks like once you account for reconnection, state consistency, and long‑term ownership — without dragging in unnecessary abstractions.
+This project exists to show what a calm, maintainable baseline looks like once you account for reconnection, state consistency, and long‑term ownership
 
 ## Limitations & Roadmap
 
