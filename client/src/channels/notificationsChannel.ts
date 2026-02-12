@@ -1,35 +1,14 @@
+import {
+  NotificationsServerToClientSchema,
+  type NotificationsClientToServer,
+  type NotifSchema,
+} from "../schemas/notificationSchemas";
 import { SocketClient } from "../socket/SocketClient";
-import type { SocketEnvelope, Unsubscribe } from "../socket/types";
-
-export type NotificationsClientToServer =
-  | { type: "NOTIF_PUSH"; text: string }
-  | { type: "NOTIF_READ"; notifId: string };
-
-export type NotificationsServerToClient =
-  | {
-      type: "NOTIF_PUSHED";
-      notif: {
-        id: string;
-        text: string;
-        fromUserId: string;
-        fromDisplayName: string;
-        ts: number;
-      };
-    }
-  | {
-      type: "NOTIF_READ";
-      notifId: string;
-      byUserId: string;
-      byDisplayName: string;
-    };
+import type { Unsubscribe } from "../socket/types";
+import z from "zod";
 
 type Handlers = Partial<{
-  pushed: (
-    notif: Extract<
-      NotificationsServerToClient,
-      { type: "NOTIF_PUSHED" }
-    >["notif"],
-  ) => void;
+  pushed: (notif: z.infer<typeof NotifSchema>) => void;
   read: (p: {
     notifId: string;
     byUserId: string;
@@ -44,8 +23,16 @@ export function createNotificationsChannel(client: SocketClient) {
 
   function subscribe(handlers: Handlers): Unsubscribe {
     return client.onMessage((raw) => {
-      const msg = raw as NotificationsServerToClient;
-
+      const parsed = NotificationsServerToClientSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.warn(
+          "Invalid notifications message",
+          parsed.error.flatten(),
+          raw,
+        );
+        return;
+      }
+      const msg = parsed.data;
       switch (msg.type) {
         case "NOTIF_PUSHED":
           handlers.pushed?.(msg.notif);

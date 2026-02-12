@@ -1,6 +1,7 @@
 import { SocketClient } from "../socket/SocketClient";
 import type { Unsubscribe } from "../socket/types";
-import type { Rule } from "../types";
+import type { Rule } from "../schemas/ruleSchemas";
+import { RuleEditorServerToClientSchema } from "../schemas/sessionSchemas";
 
 export type RuleEditorClientToServer =
   | { type: "HELLO"; userId: string; displayName: string }
@@ -67,7 +68,16 @@ export function createRuleEditorChannel(client: SocketClient) {
 
   function subscribe(handlers: Handlers): Unsubscribe {
     return client.onMessage((raw) => {
-      const msg = raw as RuleEditorServerToClient;
+      const parsed = RuleEditorServerToClientSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.warn(
+          "Invalid rule-editor message",
+          parsed.error.flatten(),
+          raw,
+        );
+        return;
+      }
+      const msg = parsed.data;
 
       switch (msg.type) {
         case "WELCOME":
@@ -119,7 +129,7 @@ export function createRuleEditorChannel(client: SocketClient) {
   }
 
   return {
-    hello: (p: { userId: string; displayName: string; room: string }) =>
+    hello: (p: { userId: string; displayName: string }) =>
       send({ type: "HELLO", ...p }),
     startEdit: (ruleId: string) => send({ type: "START_EDIT", ruleId }),
     cancelEdit: (ruleId: string) => send({ type: "CANCEL_EDIT", ruleId }),

@@ -50,7 +50,9 @@ function send(ws: WebSocket, msg: ServerToClient) {
   if (ws.readyState !== WebSocket.OPEN) return;
   try {
     ws.send(JSON.stringify(msg));
-  } catch {}
+  } catch {
+    // ignore send errors (e.g. if the connection is closing)
+  }
 }
 
 function broadcast(room: string, msg: ServerToClient) {

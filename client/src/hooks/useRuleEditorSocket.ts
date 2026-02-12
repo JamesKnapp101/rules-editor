@@ -2,7 +2,7 @@ import { getSocketClient } from "../socket/getSocketClient";
 import { createRuleEditorChannel } from "../channels/ruleEditorChannel";
 import { useSession } from "./useSession";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import type { Rule } from "../types";
+import type { Rule } from "../schemas/ruleSchemas";
 
 function socketOrigin(url: string) {
   const u = new URL(url);
@@ -16,8 +16,27 @@ export function useRuleEditorSocket(params: {
   userId: string;
   displayName: string;
   room: string;
+  users: Array<{ userId: string; displayName: string }>;
+  rules: Rule[];
+  feed: string[];
+  setUsers: React.Dispatch<
+    React.SetStateAction<Array<{ userId: string; displayName: string }>>
+  >;
+  setRules: React.Dispatch<React.SetStateAction<Rule[]>>;
+  setFeed: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const { url, userId, displayName, room } = params;
+  const {
+    url,
+    userId,
+    displayName,
+    room,
+    users,
+    rules,
+    feed,
+    setUsers,
+    setRules,
+    setFeed,
+  } = params;
   const { status, connectionId, sessionReady } = useSession({
     url: socketOrigin(url),
     userId,
@@ -26,15 +45,18 @@ export function useRuleEditorSocket(params: {
   });
 
   const [roomCounts, setRoomCounts] = useState<Record<string, number>>({});
-  const [users, setUsers] = useState<
-    Array<{ userId: string; displayName: string }>
-  >([]);
-  const [rules, setRules] = useState<Rule[]>([]);
-  const [feed, setFeed] = useState<string[]>([]);
+  const usersRef = useRef(users);
 
-  const log = useCallback((line: string) => {
-    setFeed((prev) => [line, ...prev].slice(0, 50));
-  }, []);
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
+
+  const log = useCallback(
+    (line: string) => {
+      setFeed((prev) => [line, ...prev].slice(0, 50));
+    },
+    [setFeed],
+  );
 
   const roomRef = useRef(room);
   useEffect(() => {
@@ -63,11 +85,9 @@ export function useRuleEditorSocket(params: {
       },
 
       userLeft: (leftUserId) => {
-        setUsers((prev) => {
-          const leaving = prev.find((u) => u.userId === leftUserId);
-          log(`${leaving?.displayName ?? "A user"} left ${roomRef.current}.`);
-          return prev.filter((u) => u.userId !== leftUserId);
-        });
+        const leaving = usersRef.current.find((u) => u.userId === leftUserId);
+        log(`${leaving?.displayName ?? "A user"} left ${roomRef.current}.`);
+        setUsers((prev) => prev.filter((u) => u.userId !== leftUserId));
       },
 
       editStarted: ({ ruleId, displayName }) =>
@@ -81,13 +101,7 @@ export function useRuleEditorSocket(params: {
     });
 
     return () => unsubMessages();
-  }, [channel, log]);
-
-  useEffect(() => {
-    setUsers([]);
-    setRules([]);
-    setFeed([]);
-  }, [room]);
+  }, [channel, log, setUsers, setRules]);
 
   return {
     status,

@@ -2,6 +2,7 @@ import { useRuleEditorSocket } from "./hooks/useRuleEditorSocket";
 import { NotificationsPanel } from "./components/NotificationsPanel";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
+import type { Rule } from "./schemas/ruleSchemas";
 
 type RoomId = "general" | "billing" | "clinical";
 const ROOMS: Array<{ id: RoomId; label: string }> = [
@@ -79,15 +80,25 @@ function ConnectScreen(props: { onConnect: (name: string) => void }) {
 function RuleEditorScreen(props: { userId: string; displayName: string }) {
   const { userId, displayName } = props;
   const [room, setRoom] = useState<RoomId>("general");
-
   const [notifUnread, setNotifUnread] = useState(0);
   const feedScrollRef = useRef<HTMLDivElement | null>(null);
+  const [users, setUsers] = useState<
+    Array<{ userId: string; displayName: string }>
+  >([]);
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [feed, setFeed] = useState<string[]>([]);
 
   const socket = useRuleEditorSocket({
     url: "ws://localhost:5176",
     userId,
     displayName,
     room,
+    users,
+    rules,
+    feed,
+    setUsers,
+    setRules,
+    setFeed,
   });
 
   const prevRoomRef = useRef(room);
@@ -102,7 +113,6 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
   useEffect(() => {
     const t = window.setTimeout(() => setSwitching(false), 160);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
 
   useEffect(() => {
@@ -202,6 +212,9 @@ function RuleEditorScreen(props: { userId: string; displayName: string }) {
                         <button
                           onClick={() => {
                             setRoom(id);
+                            setUsers([]);
+                            setRules([]);
+                            setFeed([]);
                             setSwitching(true);
                           }}
                           className={`roomButton ${active ? "roomButtonActive" : ""}`}

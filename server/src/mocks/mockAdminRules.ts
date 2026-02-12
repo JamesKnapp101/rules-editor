@@ -6,18 +6,6 @@ type RuleEvent =
   | "AddOptions"
   | "RemoveOptions";
 
-type Operator =
-  | "="
-  | "!="
-  | "in"
-  | "notIn"
-  | "exists"
-  | "between"
-  | "<"
-  | "<="
-  | ">"
-  | ">=";
-
 type Predicate =
   | {
       field: string;
