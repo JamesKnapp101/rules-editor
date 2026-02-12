@@ -39,7 +39,7 @@ type Handlers = Partial<{
 
 export function createNotificationsChannel(client: SocketClient) {
   function send(msg: NotificationsClientToServer) {
-    client.send(msg as unknown as SocketEnvelope);
+    client.send(msg);
   }
 
   function subscribe(handlers: Handlers): Unsubscribe {

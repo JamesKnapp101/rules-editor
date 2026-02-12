@@ -10,18 +10,12 @@ export function useSession(params: {
   room: string;
 }) {
   const { url, userId, displayName, room } = params;
-
   const [status, setStatus] = useState<SocketStatus>("disconnected");
   const [connectionId, setConnectionId] = useState<string | null>(null);
-
   const [helloSentKey, setHelloSentKey] = useState<string | null>(null);
   const helloKeyRef = useRef<string | null>(null);
-
   const subscribedRoomRef = useRef<string | null>(null);
-
   const desiredHelloKey = `${userId}|${displayName}`;
-
-  // Keep refs to call session methods from the room effect
   const sessionRef = useRef<ReturnType<typeof createSessionChannel> | null>(
     null,
   );

@@ -64,7 +64,6 @@ export class SocketClient {
         return;
       }
 
-      // lightweight shape check
       if (!msg || typeof msg !== "object" || !("type" in msg)) return;
 
       for (const h of this.messageHandlers) h(msg as SocketEnvelope);
@@ -91,9 +90,7 @@ export class SocketClient {
       }, delay);
     };
 
-    ws.onerror = () => {
-      // onclose will follow
-    };
+    ws.onerror = () => {};
   }
 
   disconnect() {

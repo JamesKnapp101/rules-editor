@@ -5,8 +5,6 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { Rule } from "../types";
 
 function socketOrigin(url: string) {
-  // Keep the WS client stable even if callers append query params.
-  // Room should be part of SUBSCRIBE, not part of the URL.
   const u = new URL(url);
   u.search = "";
   u.hash = "";
@@ -20,12 +18,11 @@ export function useRuleEditorSocket(params: {
   room: string;
 }) {
   const { url, userId, displayName, room } = params;
-
   const { status, connectionId, sessionReady } = useSession({
     url: socketOrigin(url),
     userId,
     displayName,
-    room, // session hook can still SUBSCRIBE based on room; just don’t encode it into the URL
+    room,
   });
 
   const [roomCounts, setRoomCounts] = useState<Record<string, number>>({});
@@ -45,19 +42,15 @@ export function useRuleEditorSocket(params: {
   }, [room]);
 
   const baseUrl = useMemo(() => socketOrigin(url), [url]);
-
-  // IMPORTANT: stable client + channel (don’t recreate per room change)
   const client = useMemo(() => getSocketClient(baseUrl), [baseUrl]);
   const channel = useMemo(() => createRuleEditorChannel(client), [client]);
 
-  // Subscribe once per channel instance.
   useEffect(() => {
     const unsubMessages = channel.subscribe({
       presenceSnapshot: (snapshot) => setUsers(snapshot),
       roomCounts: (counts) => setRoomCounts(counts),
 
       rulesSnapshot: ({ room: snapshotRoom, rules }) => {
-        // Prevent late snapshots from stomping new room’s UI
         if (snapshotRoom !== roomRef.current) return;
         setRules(rules);
       },
@@ -90,7 +83,6 @@ export function useRuleEditorSocket(params: {
     return () => unsubMessages();
   }, [channel, log]);
 
-  // Optional: clear room-scoped state immediately on room change (prevents “flash”)
   useEffect(() => {
     setUsers([]);
     setRules([]);

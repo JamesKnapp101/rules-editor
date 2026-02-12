@@ -1,12 +1,12 @@
 const USER_COLORS = [
-  "#2563eb", // blue
-  "#16a34a", // green
-  "#9333ea", // purple
-  "#db2777", // pink
-  "#ea580c", // orange
-  "#0d9488", // teal
-  "#4f46e5", // indigo
-  "#65a30d", // lime
+  "#2563eb",
+  "#16a34a",
+  "#9333ea",
+  "#db2777",
+  "#ea580c",
+  "#0d9488",
+  "#4f46e5",
+  "#65a30d",
 ];
 
 export function getUserColor(name: string): string {

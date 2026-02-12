@@ -112,7 +112,6 @@ export function createRuleEditorChannel(client: SocketClient) {
         case "ROOM_COUNTS":
           handlers.roomCounts?.(msg.counts);
           return;
-
         default:
           return;
       }

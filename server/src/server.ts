@@ -37,10 +37,7 @@ function requireRoom(
 
 const PORT = 5176;
 
-// Plain HTTP server; TLS termination is assumed to be handled by a proxy in production.
 const server = http.createServer();
-
-// Attach WebSocketServer to the HTTP server (single listening socket, no confusion)
 const wss = new WebSocketServer({ server });
 
 const conns = new Map<WebSocket, Conn>();
@@ -53,9 +50,7 @@ function send(ws: WebSocket, msg: ServerToClient) {
   if (ws.readyState !== WebSocket.OPEN) return;
   try {
     ws.send(JSON.stringify(msg));
-  } catch {
-    // ignore; socket is effectively dead
-  }
+  } catch {}
 }
 
 function broadcast(room: string, msg: ServerToClient) {
@@ -86,7 +81,7 @@ function roomUsers(room: string) {
       users.push({ userId: c.userId, displayName: c.displayName });
     }
   }
-  // de-dupe by userId
+
   const seen = new Set<string>();
   return users.filter((u) =>
     seen.has(u.userId) ? false : (seen.add(u.userId), true),
