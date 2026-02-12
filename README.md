@@ -1,67 +1,104 @@
-# Rule Editor — WebSocket Demo
+# Rule Editor — Production-Style WebSocket Reference
 
 **Client + Server · React · TypeScript · WebSockets**
 
-A small, production-leaning WebSocket project that demonstrates how to design and structure a real-world, long-lived socket feature for teams that have to maintain it.
+A production-oriented reference implementation of a real-time collaborative feature built on WebSockets.
 
-This repo intentionally favors **clarity, correctness, and extensibility** over UI polish.
+This project focuses on **architecture, correctness, and long-term maintainability** — the parts that usually break down first in real systems — rather than UI polish.
 
----
-
-## What This Project Demonstrates
-
-- Authenticated WebSocket connection setup
-- Room / subscription‑style messaging
-- Predictable client‑side state updates
-- Centralized connection lifecycle management
-- Reconnect handling with bounded retries and backoff
-- Explicit message validation using typed contracts
-- Basic observability: connection state, retries, last‑message timestamps
+It demonstrates how to structure a long-lived, team-owned WebSocket feature without letting connection logic, state updates, and reconnection behavior sprawl across the codebase.
 
 ---
+
+## Screenshot
 
 ![Rule Editor activity feed](client/src/assets/screenshot.png)
 
+---
+
+## What This Demonstrates
+
+Core engineering concerns you encounter in real production WebSocket systems:
+
+- Authenticated connection setup
+- Room / subscription-based messaging
+- Centralized connection lifecycle management
+- Deterministic client-side state updates
+- Reconnect handling with bounded retries + backoff
+- Explicit, typed message contracts shared across client/server
+- Basic observability (connection state, retries, last-message timestamps)
+- Clean separation of concerns between transport, channels, and UI
+
+---
+
+## Architecture
+
+### Client
+
+- Connection lifecycle manager
+- Channel abstraction for feature isolation
+- Typed message handling
+- Predictable state updates
+- Reconnect + backoff logic
+- Minimal UI to visualize activity
+
+### Server
+
+- Room-based subscriptions
+- Message validation
+- Presence tracking
+- Broadcast fan-out
+- Explicit protocol contracts
+
+### Design Goals
+
+- Avoid WebSocket logic scattered across components
+- Make behavior easy to reason about and test
+- Keep adding new real-time features cheap
+- Favor clarity over cleverness
+
+---
+
 ## Tech Stack
 
-**Runtime & Tooling**
+### Runtime & Tooling
 
 - Node.js 20+
-- npm (workspace orchestration)
+- npm workspaces
 - TypeScript (shared contracts)
 - `tsx` (server dev runtime)
 
-**Client**
+### Client
 
 - React
 - TypeScript
 - Vite
 
-**Server**
+### Server
 
 - Bare Node.js
 - `ws`
 
-**Quality & Safety**
+### Quality
 
-- ESLint (flat config, v9)
+- ESLint (flat config, strict rules)
 - Vitest (server tests)
 
 ---
 
 ## Project Structure
 
-```
 rules-editor/
-├─ client/        # React + Vite frontend
-├─ server/        # WebSocket server
-├─ package.json   # Root orchestration scripts
+├─ client/ # React + Vite frontend
+├─ server/ # WebSocket server
+├─ package.json # workspace orchestration
 └─ README.md
-```
 
-- The **server** is a standalone WebSocket service with explicit message handling and validation.
-- The **client** owns connection lifecycle, subscriptions, reconnection, and UI state.
-- Root‑level scripts coordinate install, dev, lint, test, and build across both packages.
+- **Server** → message handling + validation
+- **Client** → lifecycle, subscriptions, state
+- **Shared types** → explicit protocol contracts
+
+The goal is clean boundaries and low coupling.
 
 ---
 
@@ -72,128 +109,38 @@ rules-editor/
 - Node.js 20+
 - npm
 
-> An `.nvmrc` file is included for convenience.
-
----
+> `.nvmrc` included for convenience
 
 ### Install
-
-Install dependencies for both client and server:
 
 ```bash
 npm run install:all
 ```
 
----
-
-### Run (Development)
-
-Start both client and server in watch mode:
-
-```bash
-npm run dev
-```
-
----
-
 ### Lint
 
-```bash
 npm run lint
-```
-
----
 
 ### Tests
 
-```bash
 npm test
-```
-
----
 
 ### Build
 
-Build both client and server:
-
-```bash
 npm run build
-```
 
-Outputs:
+## Preview
 
-- Server: `server/dist/`
-- Client: `client/dist/`
-
----
-
-### Preview
-
-Run the built client locally:
-
-```bash
 npm run preview
-```
 
----
+How to Try It
 
-## Configuration
+Open the app in two browser tabs
 
-The project is intentionally minimal and runs out of the box.
+Enter different display names
 
-If environment variables are introduced later:
+Join the same room
 
-- document them in a `.env.example` file
-- never commit real values
+Edit rules and observe activity + presence updates
 
----
-
-## Design Notes
-
-- WebSocket lifecycle logic is **centralized**, not scattered across components
-- Message shapes are modeled explicitly with TypeScript unions
-- Client state updates are deterministic and scoped
-- Reconnect logic uses bounded retries with backoff
-- Observability is treated as a first‑class concern
-- Lint rules prioritize correctness and maintainability over stylistic bikeshedding
-
----
-
-## How to Try It
-
-1. Open the app in two browser tabs.
-2. Enter different display names.
-3. Join the same room.
-4. Start editing a rule in one tab and observe activity updates in the other.
-5. Switch rooms to see subscription changes and presence updates.
-
-This is intentionally a minimal interaction surface; the focus is on WebSocket lifecycle, message flow, and state consistency rather than UI.
-
-## What This Is (and Isn’t)
-
-### This **is**:
-
-- A realistic WebSocket architecture example
-- A reference for clean client / server separation
-- Suitable as a technical demo or interview artifact
-
-### This **is not**:
-
-- A polished product UI
-- A full authentication system
-- A backend framework showcase
-
----
-
-## Why This Exists
-
-This project exists to show what a calm, maintainable baseline looks like once you account for reconnection, state consistency, and long‑term ownership
-
-## Limitations & Roadmap
-
-- Concurrent editing is currently allowed (no edit locking).
-- A scoped soft-lock per rule is a planned improvement:
-  - Server-granted edit lease with TTL
-  - Heartbeat refresh
-  - Automatic expiration on disconnect
-  - Client UI gating and lock visibility
+Switch rooms to see live subscription changes
